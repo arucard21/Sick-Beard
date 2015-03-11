@@ -176,7 +176,7 @@ def getURLFileLike(url, validate=False, cookies = cookielib.CookieJar(), passwor
         # Before python 2.7.9, there was no built-in way to validate SSL certificates
         # Since our default is not to validate, it is of low priority to make it available here
         if validate and sys.version_info < (2, 7, 9):
-            logger.log(u"The SSL certificate will not be validated for " + url + "(python 2.7.9+ required)", logger.MESSAGE)
+            logger.log(u"The SSL certificate will not be validated for " + url + u"(python 2.7.9+ required)", logger.MESSAGE)
 
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor(cookies),
                                       MultipartPostHandler.MultipartPostHandler,
@@ -192,14 +192,14 @@ def getURLFileLike(url, validate=False, cookies = cookielib.CookieJar(), passwor
         return opener.open(url, timeout=30)
 
     except urllib2.HTTPError, e:
-        logger.log(u"HTTP error " + str(e.code) + " while loading URL " + url, logger.WARNING)
+        logger.log(u"HTTP error " + str(e.code) + u" while loading URL " + url, logger.WARNING)
         if throw_exc:
             raise 
         else:
             return None
 
     except urllib2.URLError, e:
-        logger.log(u"URL error " + str(e.reason) + " while loading URL " + url, logger.WARNING)
+        logger.log(u"URL error " + str(e.reason) + u" while loading URL " + url, logger.WARNING)
         if throw_exc:
             raise 
         else:
@@ -227,7 +227,7 @@ def getURLFileLike(url, validate=False, cookies = cookielib.CookieJar(), passwor
             return None
 
     except Exception:
-        logger.log(u"Unknown exception while loading URL " + url + ": " + traceback.format_exc(), logger.WARNING)
+        logger.log(u"Unknown exception while loading URL " + url + u": " + traceback.format_exc(), logger.WARNING)
         if throw_exc:
             raise 
         else:
@@ -320,7 +320,7 @@ def searchDBForShow(regShowName):
                 logger.log(u"Unable to match a record in the DB for " + showName, logger.DEBUG)
                 continue
             elif len(sqlResults) > 1:
-                logger.log(u"Multiple results for " + showName + " in the DB, unable to match show name", logger.DEBUG)
+                logger.log(u"Multiple results for " + showName + u" in the DB, unable to match show name", logger.DEBUG)
                 continue
             else:
                 return (int(sqlResults[0]["tvdb_id"]), sqlResults[0]["show_name"])
@@ -389,16 +389,16 @@ def make_dirs(path):
     parents
     """
 
-    logger.log(u"Checking if the path " + path + " already exists", logger.DEBUG)
+    logger.log(u"Checking if the path " + path + u" already exists", logger.DEBUG)
 
     if not ek.ek(os.path.isdir, path):
         # Windows, create all missing folders
         if os.name == 'nt' or os.name == 'ce':
             try:
-                logger.log(u"Folder " + path + " didn't exist, creating it", logger.DEBUG)
+                logger.log(u"Folder " + path + u" didn't exist, creating it", logger.DEBUG)
                 ek.ek(os.makedirs, path)
             except (OSError, IOError), e:
-                logger.log(u"Failed creating " + path + " : " + ex(e), logger.ERROR)
+                logger.log(u"Failed creating " + path + u" : " + ex(e), logger.ERROR)
                 return False
 
         # not Windows, create all missing folders and set permissions
@@ -415,14 +415,14 @@ def make_dirs(path):
                     continue
 
                 try:
-                    logger.log(u"Folder " + sofar + " didn't exist, creating it", logger.DEBUG)
+                    logger.log(u"Folder " + sofar + u" didn't exist, creating it", logger.DEBUG)
                     ek.ek(os.mkdir, sofar)
                     # use normpath to remove end separator, otherwise checks permissions against itself
                     chmodAsParent(ek.ek(os.path.normpath, sofar))
                     # do the library update for synoindex
                     notifiers.synoindex_notifier.addFolder(sofar)
                 except (OSError, IOError), e:
-                    logger.log(u"Failed creating " + sofar + " : " + ex(e), logger.ERROR)
+                    logger.log(u"Failed creating " + sofar + u" : " + ex(e), logger.ERROR)
                     return False
 
     return True
@@ -453,10 +453,10 @@ def rename_ep_file(cur_path, new_path, old_path_length=0):
 
     # move the file
     try:
-        logger.log(u"Renaming file from " + cur_path + " to " + new_path)
+        logger.log(u"Renaming file from " + cur_path + u" to " + new_path)
         ek.ek(os.rename, cur_path, new_path)
     except (OSError, IOError), e:
-        logger.log(u"Failed renaming " + cur_path + " to " + new_path + ": " + ex(e), logger.ERROR)
+        logger.log(u"Failed renaming " + cur_path + u" to " + new_path + ": " + ex(e), logger.ERROR)
         return False
 
     # clean up any old folders that are empty
@@ -492,7 +492,7 @@ def delete_empty_folders(check_empty_dir, keep_dir=None):
                 # do the library update for synoindex
                 notifiers.synoindex_notifier.deleteFolder(check_empty_dir)
             except OSError, e:
-                logger.log(u"Unable to delete " + check_empty_dir + ": " + repr(e) + " / " + str(e), logger.WARNING)
+                logger.log(u"Unable to delete " + check_empty_dir + u": " + repr(e) + u" / " + str(e), logger.WARNING)
                 break
             check_empty_dir = ek.ek(os.path.dirname, check_empty_dir)
         else:
@@ -506,7 +506,7 @@ def chmodAsParent(childPath):
     parentPath = ek.ek(os.path.dirname, childPath)
 
     if not parentPath:
-        logger.log(u"No parent path provided in " + childPath + ", unable to get permissions from it", logger.DEBUG)
+        logger.log(u"No parent path provided in " + childPath + u", unable to get permissions from it", logger.DEBUG)
         return
 
     parentMode = stat.S_IMODE(os.stat(parentPath)[stat.ST_MODE])
@@ -526,7 +526,7 @@ def chmodAsParent(childPath):
     user_id = os.geteuid()  # @UndefinedVariable - only available on UNIX
 
     if user_id != 0 and user_id != childPath_owner:
-        logger.log(u"Not running as root or owner of " + childPath + ", not trying to set permissions", logger.DEBUG)
+        logger.log(u"Not running as root or owner of " + childPath + u", not trying to set permissions", logger.DEBUG)
         return
 
     try:
@@ -564,7 +564,7 @@ def fixSetGroupID(childPath):
         user_id = os.geteuid()  # @UndefinedVariable - only available on UNIX
 
         if user_id != 0 and user_id != childPath_owner:
-            logger.log(u"Not running as root or owner of " + childPath + ", not trying to set the set-group-ID", logger.DEBUG)
+            logger.log(u"Not running as root or owner of " + childPath + u", not trying to set the set-group-ID", logger.DEBUG)
             return
 
         try:
@@ -673,7 +673,7 @@ def parse_xml(data, del_xmlns=False):
     try:
         parsedXML = etree.fromstring(data)
     except Exception, e:
-        logger.log(u"Error trying to parse xml data: " + data + " to Elementtree, Error: " + ex(e), logger.DEBUG)
+        logger.log(u"Error trying to parse xml data: " + data + u" to Elementtree, Error: " + ex(e), logger.DEBUG)
         parsedXML = None
 
     return parsedXML
@@ -713,22 +713,22 @@ def backupVersionedFile(old_file, version):
 
     while not ek.ek(os.path.isfile, new_file):
         if not ek.ek(os.path.isfile, old_file):
-            logger.log(u"Not creating backup, " + old_file + " doesn't exist", logger.DEBUG)
+            logger.log(u"Not creating backup, " + old_file + u" doesn't exist", logger.DEBUG)
             break
 
         try:
-            logger.log(u"Trying to back up " + old_file + " to " + new_file, logger.DEBUG)
+            logger.log(u"Trying to back up " + old_file + u" to " + new_file, logger.DEBUG)
             shutil.copy(old_file, new_file)
             logger.log(u"Backup done", logger.DEBUG)
             break
         except Exception, e:
-            logger.log(u"Error while trying to back up " + old_file + " to " + new_file + " : " + ex(e), logger.WARNING)
+            logger.log(u"Error while trying to back up " + old_file + u" to " + new_file + " : " + ex(e), logger.WARNING)
             numTries += 1
             time.sleep(1)
             logger.log(u"Trying again.", logger.DEBUG)
 
         if numTries >= 10:
-            logger.log(u"Unable to back up " + old_file + " to " + new_file + " please do it manually.", logger.ERROR)
+            logger.log(u"Unable to back up " + old_file + u" to " + new_file + u" please do it manually.", logger.ERROR)
             return False
 
     return True
