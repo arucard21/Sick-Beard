@@ -24,6 +24,8 @@ import sickbeard
 
 from xml.sax.saxutils import escape
 
+import xml.etree.cElementTree as etree
+
 from sickbeard import db
 from sickbeard import logger
 from sickbeard import tvcache
@@ -123,13 +125,9 @@ class KickAssProvider(generic.TorrentProvider):
             else:
                 self.url = self._getDefaultURL()
             
-            if len(search_params):
-                SearchParameters["q"] = search_params+" category:tv"
-            else:
-                SearchParameters["q"] = "category:tv"
-                
             SearchParameters["order"] = "desc"
             SearchParameters["page"] = str(page)
+            SearchParameters["rss"] = 1
             
             if len(search_params):
                 SearchParameters["field"] = "seeders"
@@ -142,24 +140,24 @@ class KickAssProvider(generic.TorrentProvider):
             # recognized as path without a netloc
             if not netloc:
                 netloc = path
-            path = "json.php"
+            path = "usearch/" + (search_params + " category:tv/").strip()
             query = urlencode(SearchParameters)
             searchURL = urlunsplit((scheme, netloc, path, query, fragment))
-            searchData = self.getURL(searchURL)
-
-            if searchData:
+            logger.log("[" + self.name + "] _doSearch() Search URL: "+searchURL, logger.DEBUG)
+            searchData = self.getURL(searchURL, errorWhenNone=False)
+ 
+            if searchData and searchData.startswith("<?xml"):
                 try:
-                    jdata = json.loads(searchData)
-                except ValueError:
-                    logger.log("[" + self.name + "] _doSearch() invalid data on search page " + str(page))
+                    responseXML = etree.ElementTree(etree.XML(searchData))
+                    torrents = responseXML.getiterator('item')
+                except Exception, e:
+                    logger.log("[" + self.name + "] _doSearch() XML error: " + str(e), logger.ERROR)
                     continue
                 
-                torrents = jdata.get('list', [0])
-                
-                for torrent in torrents:
-                    item = (torrent['title'].replace('.',' '), torrent['torrentLink'])
-                    logger.log("[" + self.name + "] _doSearch() Title: " + torrent['title'], logger.DEBUG)
-                    results.append(item)
+                if type(torrents) is list:
+                    for torrent in torrents:
+                        if torrent.findtext("title") and torrent.find("enclosure") is not None:
+                            results.append((show_name_helpers.sanitizeSceneName(torrent.findtext("title")),torrent.find("enclosure").get("url")))
                     
         if not len(results):
             logger.log("[" + self.name + "] _doSearch() No results found.", logger.DEBUG)
