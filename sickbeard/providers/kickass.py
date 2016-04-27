@@ -1,4 +1,7 @@
 ###################################################################################################
+# Author: Jodi Jones <venom@gen-x.co.nz>
+# URL: https://github.com/VeNoMouS/Sick-Beard
+# 
 # This file is part of Sick Beard.
 #
 # Sick Beard is free software: you can redistribute it and/or modify
@@ -16,7 +19,7 @@
 ###################################################################################################
 
 import json
-from urllib import urlencode
+from urllib import urlencode, quote
 from urlparse import urlsplit, urlunsplit
 import generic
 import datetime
@@ -140,11 +143,11 @@ class KickAssProvider(generic.TorrentProvider):
             # recognized as path without a netloc
             if not netloc:
                 netloc = path
-            path = "usearch/" + (search_params + " category:tv/").strip()
+            path = quote("usearch/" + (search_params + " category:tv/").strip())
             query = urlencode(SearchParameters)
             searchURL = urlunsplit((scheme, netloc, path, query, fragment))
             logger.log("[" + self.name + "] _doSearch() Search URL: "+searchURL, logger.DEBUG)
-            searchData = self.getURL(searchURL, errorWhenNone=False)
+            searchData = self.getURL(searchURL)
  
             if searchData and searchData.startswith("<?xml"):
                 try:
